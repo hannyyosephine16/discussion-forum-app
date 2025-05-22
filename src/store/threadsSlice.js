@@ -1,3 +1,4 @@
+// File: src/store/threadsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiService from '../services/api';
 
@@ -42,17 +43,18 @@ export const createComment = createAsyncThunk(
   'threads/createComment',
   async ({ threadId, content }, { rejectWithValue }) => {
     try {
-      console.log('Creating comment with:', { threadId, content }); // Debug
+      console.log('Creating comment with:', { threadId, content });
       const response = await apiService.createComment(threadId, content);
-      console.log('Comment API response:', response); // Debug
+      console.log('Comment API response:', response);
       return { threadId, comment: response.data.comment };
     } catch (error) {
-      console.error('Create comment error:', error); // Debug
+      console.error('Create comment error:', error);
       return rejectWithValue(error.message);
     }
   },
 );
 
+// IMPROVED: Vote thunks with rollback capability
 export const voteThread = createAsyncThunk(
   'threads/voteThread',
   async ({ threadId, voteType }, { rejectWithValue, getState }) => {
@@ -60,7 +62,7 @@ export const voteThread = createAsyncThunk(
       const { auth } = getState();
       const userId = auth.user?.id;
 
-      console.log('Voting thread:', { threadId, voteType, userId }); // Debug
+      console.log('Voting thread:', { threadId, voteType, userId });
 
       if (voteType === 1) {
         await apiService.upVoteThread(threadId);
@@ -72,8 +74,12 @@ export const voteThread = createAsyncThunk(
 
       return { threadId, voteType, userId };
     } catch (error) {
-      console.error('Vote thread error:', error); // Debug
-      return rejectWithValue(error.message);
+      console.error('Vote thread error:', error);
+      return rejectWithValue({
+        message: error.message,
+        threadId,
+        type: 'thread'
+      });
     }
   },
 );
@@ -85,7 +91,7 @@ export const voteComment = createAsyncThunk(
       const { auth } = getState();
       const userId = auth.user?.id;
 
-      console.log('Voting comment:', { threadId, commentId, voteType, userId }); // Debug
+      console.log('Voting comment:', { threadId, commentId, voteType, userId });
 
       if (voteType === 1) {
         await apiService.upVoteComment(threadId, commentId);
@@ -97,8 +103,13 @@ export const voteComment = createAsyncThunk(
 
       return { threadId, commentId, voteType, userId };
     } catch (error) {
-      console.error('Vote comment error:', error); // Debug
-      return rejectWithValue(error.message);
+      console.error('Vote comment error:', error);
+      return rejectWithValue({
+        message: error.message,
+        threadId,
+        commentId,
+        type: 'comment'
+      });
     }
   },
 );
@@ -137,13 +148,18 @@ const threadsSlice = createSlice({
       const uniqueCategories = [...new Set(state.threads.map((thread) => thread.category))];
       state.categories = uniqueCategories;
     },
-    // Optimistic updates for votes
+    // IMPROVED: Optimistic updates with rollback tracking
     optimisticVoteThread: (state, action) => {
       const { threadId, voteType, userId } = action.payload;
       const thread = state.threads.find((t) => t.id === threadId);
       
       if (thread) {
-        // Ensure upVotesBy and downVotesBy are arrays
+        // Store original state for rollback
+        thread._rollbackState = {
+          upVotesBy: [...(thread.upVotesBy || [])],
+          downVotesBy: [...(thread.downVotesBy || [])]
+        };
+        
         thread.upVotesBy = thread.upVotesBy || [];
         thread.downVotesBy = thread.downVotesBy || [];
         
@@ -161,6 +177,11 @@ const threadsSlice = createSlice({
 
       // Update current thread if it's the same
       if (state.currentThread && state.currentThread.id === threadId) {
+        state.currentThread._rollbackState = {
+          upVotesBy: [...(state.currentThread.upVotesBy || [])],
+          downVotesBy: [...(state.currentThread.downVotesBy || [])]
+        };
+        
         state.currentThread.upVotesBy = state.currentThread.upVotesBy || [];
         state.currentThread.downVotesBy = state.currentThread.downVotesBy || [];
         
@@ -180,7 +201,12 @@ const threadsSlice = createSlice({
       if (state.currentThread && state.currentThread.comments) {
         const comment = state.currentThread.comments.find((c) => c.id === commentId);
         if (comment) {
-          // Ensure upVotesBy and downVotesBy are arrays
+          // Store original state for rollback
+          comment._rollbackState = {
+            upVotesBy: [...(comment.upVotesBy || [])],
+            downVotesBy: [...(comment.downVotesBy || [])]
+          };
+          
           comment.upVotesBy = comment.upVotesBy || [];
           comment.downVotesBy = comment.downVotesBy || [];
           
@@ -193,6 +219,36 @@ const threadsSlice = createSlice({
             comment.upVotesBy.push(userId);
           } else if (voteType === -1) {
             comment.downVotesBy.push(userId);
+          }
+        }
+      }
+    },
+    // NEW: Rollback function
+    rollbackOptimisticVote: (state, action) => {
+      const { threadId, commentId, type } = action.payload;
+      
+      if (type === 'thread') {
+        // Rollback thread vote
+        const thread = state.threads.find(t => t.id === threadId);
+        if (thread && thread._rollbackState) {
+          thread.upVotesBy = thread._rollbackState.upVotesBy;
+          thread.downVotesBy = thread._rollbackState.downVotesBy;
+          delete thread._rollbackState;
+        }
+        
+        if (state.currentThread && state.currentThread.id === threadId && state.currentThread._rollbackState) {
+          state.currentThread.upVotesBy = state.currentThread._rollbackState.upVotesBy;
+          state.currentThread.downVotesBy = state.currentThread._rollbackState.downVotesBy;
+          delete state.currentThread._rollbackState;
+        }
+      } else if (type === 'comment') {
+        // Rollback comment vote
+        if (state.currentThread && state.currentThread.comments) {
+          const comment = state.currentThread.comments.find(c => c.id === commentId);
+          if (comment && comment._rollbackState) {
+            comment.upVotesBy = comment._rollbackState.upVotesBy;
+            comment.downVotesBy = comment._rollbackState.downVotesBy;
+            delete comment._rollbackState;
           }
         }
       }
@@ -254,10 +310,9 @@ const threadsSlice = createSlice({
         state.loading = false;
         const { threadId, comment } = action.payload;
         
-        console.log('Adding comment to state:', { threadId, comment }); // Debug
+        console.log('Adding comment to state:', { threadId, comment });
         
         if (state.currentThread && state.currentThread.id === threadId) {
-          // Ensure comments array exists
           if (!state.currentThread.comments) {
             state.currentThread.comments = [];
           }
@@ -270,7 +325,6 @@ const threadsSlice = createSlice({
           thread.totalComments = (thread.totalComments || 0) + 1;
         }
         
-        // Update filtered threads as well
         const filteredThread = state.filteredThreads.find((t) => t.id === threadId);
         if (filteredThread) {
           filteredThread.totalComments = (filteredThread.totalComments || 0) + 1;
@@ -280,23 +334,62 @@ const threadsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Vote thread cases
+      // IMPROVED: Vote thread cases with rollback
       .addCase(voteThread.fulfilled, (state, action) => {
-        // Optimistic update was already applied, no need to update again
-        console.log('Thread vote successful:', action.payload); // Debug
+        const { threadId } = action.payload;
+        
+        // Clean up rollback state on success
+        const thread = state.threads.find(t => t.id === threadId);
+        if (thread && thread._rollbackState) {
+          delete thread._rollbackState;
+        }
+        
+        if (state.currentThread && state.currentThread.id === threadId && state.currentThread._rollbackState) {
+          delete state.currentThread._rollbackState;
+        }
+        
+        console.log('Thread vote successful:', action.payload);
       })
       .addCase(voteThread.rejected, (state, action) => {
-        state.error = action.payload;
-        // TODO: Revert optimistic update on error
+        state.error = action.payload?.message || 'Vote failed';
+        
+        // Rollback optimistic update
+        if (action.payload) {
+          threadsSlice.caseReducers.rollbackOptimisticVote(state, {
+            payload: {
+              threadId: action.payload.threadId,
+              type: action.payload.type
+            }
+          });
+        }
       })
-      // Vote comment cases
+      // IMPROVED: Vote comment cases with rollback
       .addCase(voteComment.fulfilled, (state, action) => {
-        // Optimistic update was already applied, no need to update again
-        console.log('Comment vote successful:', action.payload); // Debug
+        const { commentId } = action.payload;
+        
+        // Clean up rollback state on success
+        if (state.currentThread && state.currentThread.comments) {
+          const comment = state.currentThread.comments.find(c => c.id === commentId);
+          if (comment && comment._rollbackState) {
+            delete comment._rollbackState;
+          }
+        }
+        
+        console.log('Comment vote successful:', action.payload);
       })
       .addCase(voteComment.rejected, (state, action) => {
-        state.error = action.payload;
-        // TODO: Revert optimistic update on error
+        state.error = action.payload?.message || 'Vote failed';
+        
+        // Rollback optimistic update
+        if (action.payload) {
+          threadsSlice.caseReducers.rollbackOptimisticVote(state, {
+            payload: {
+              threadId: action.payload.threadId,
+              commentId: action.payload.commentId,
+              type: action.payload.type
+            }
+          });
+        }
       });
   },
 });
@@ -308,6 +401,7 @@ export const {
   updateCategories,
   optimisticVoteThread,
   optimisticVoteComment,
+  rollbackOptimisticVote,
 } = threadsSlice.actions;
 
 export default threadsSlice.reducer;
