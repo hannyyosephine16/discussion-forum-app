@@ -1,0 +1,111 @@
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { createThread } from '../../store/threadsSlice';
+
+function ThreadForm() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, error } = useSelector((state) => state.threads);
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    body: '',
+    category: '',
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim() || !formData.body.trim()) {
+      alert('Title and body are required');
+      return;
+    }
+    
+    try {
+      const result = await dispatch(createThread(formData));
+      if (createThread.fulfilled.match(result)) {
+        navigate('/');
+      }
+    } catch (err) {
+      // Error is handled by Redux
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="thread-form">
+      <h2>Create New Thread</h2>
+      
+      {error && <div className="error-message">{error}</div>}
+      
+      <div className="form-group">
+        <label htmlFor="title">Title:</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={handleInputChange}
+          required
+          disabled={loading}
+          placeholder="Enter thread title"
+        />
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="category">Category (optional):</label>
+        <input
+          type="text"
+          id="category"
+          name="category"
+          value={formData.category}
+          onChange={handleInputChange}
+          disabled={loading}
+          placeholder="e.g., General, Tech, News"
+        />
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="body">Content:</label>
+        <textarea
+          id="body"
+          name="body"
+          value={formData.body}
+          onChange={handleInputChange}
+          required
+          disabled={loading}
+          rows="10"
+          placeholder="Write your thread content here..."
+        />
+      </div>
+      
+      <div className="form-actions">
+        <button 
+          type="button" 
+          onClick={() => navigate('/')}
+          className="cancel-btn"
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        <button 
+          type="submit" 
+          className="submit-btn"
+          disabled={loading}
+        >
+          {loading ? 'Creating...' : 'Create Thread'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export default ThreadForm;

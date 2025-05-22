@@ -1,70 +1,158 @@
-# Getting Started with Create React App
+# Forum Diskusi App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplikasi forum diskusi yang dibangun dengan React dan Redux, menggunakan Dicoding Forum API.
 
-## Available Scripts
+## Fitur Utama
 
-In the project directory, you can run:
+### Kriteria Utama yang Dipenuhi:
 
-### `npm start`
+1. **Fungsionalitas Aplikasi**
+   - ✅ Registrasi akun pengguna
+   - ✅ Login akun pengguna
+   - ✅ Menampilkan daftar thread
+   - ✅ Menampilkan detail thread beserta komentar
+   - ✅ Membuat thread baru (memerlukan autentikasi)
+   - ✅ Membuat komentar di dalam thread (memerlukan autentikasi)
+   - ✅ Loading bar saat memuat data dari API
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+2. **Bugs Highlighting**
+   - ✅ Menggunakan ESLint dengan konfigurasi AirBnB JavaScript Style Guide
+   - ✅ Tidak ada error ESLint
+   - ✅ Menggunakan React Strict Mode
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+3. **Arsitektur Aplikasi**
+   - ✅ State aplikasi disimpan di Redux Store menggunakan Redux Toolkit
+   - ✅ Tidak ada pemanggilan API di dalam komponen (semua di Redux actions)
+   - ✅ Pemisahan kode UI dan State di folder terpisah
+   - ✅ Komponen React yang modular dan reusable
 
-### `npm test`
+### Fitur Tambahan (Saran):
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. **Fitur Votes**
+   - ✅ Tombol vote untuk thread dan komentar
+   - ✅ Indikasi visual saat pengguna sudah vote
+   - ✅ Optimistic updates untuk UX yang lebih baik
+   - ✅ Menampilkan jumlah votes
 
-### `npm run build`
+2. **Leaderboard**
+   - ✅ Halaman leaderboard
+   - ✅ Menampilkan nama, avatar, dan score pengguna
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. **Filter Kategori**
+   - ✅ Filter thread berdasarkan kategori
+   - ✅ Implementasi client-side filtering
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Struktur Proyek
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
+src/
+├── components/         # Komponen UI yang reusable
+│   ├── auth/          # Komponen autentikasi
+│   ├── common/        # Komponen umum
+│   ├── comments/      # Komponen komentar
+│   ├── leaderboard/   # Komponen leaderboard
+│   ├── threads/       # Komponen thread
+│   └── votes/         # Komponen voting
+├── hooks/             # Custom React hooks
+├── pages/             # Komponen halaman
+├── services/          # Service untuk API calls
+├── store/             # Redux store dan slices
+├── styles/            # File CSS
+└── utils/             # Utility functions
+```
 
-### `npm run eject`
+## Teknologi yang Digunakan
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- **React 18** - Library UI
+- **Redux Toolkit** - State management
+- **React Router** - Routing
+- **ESLint** - Code linting dengan AirBnB style guide
+- **CSS3** - Styling dengan responsive design
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Instalasi dan Menjalankan Aplikasi
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Prerequisites
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- Node.js (v14 atau lebih baru)
+- npm atau yarn
 
-## Learn More
+### Langkah Instalasi
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. Clone atau download proyek ini
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3. Jalankan aplikasi dalam mode development:
+   ```bash
+   npm start
+   ```
 
-### Code Splitting
+4. Buka [http://localhost:3000](http://localhost:3000) di browser
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Scripts Tersedia
 
-### Analyzing the Bundle Size
+- `npm start` - Menjalankan app dalam development mode
+- `npm test` - Menjalankan test suite
+- `npm run build` - Build app untuk production
+- `npm run lint` - Menjalankan ESLint
+- `npm run lint:fix` - Menjalankan ESLint dengan auto-fix
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## API yang Digunakan
 
-### Making a Progressive Web App
+Aplikasi ini menggunakan **Dicoding Forum API** dengan base URL:
+`https://forum-api.dicoding.dev/v1`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Endpoint yang digunakan:
+- Authentication (register, login)
+- Users (profile, users list)
+- Threads (CRUD operations)
+- Comments (create, list)
+- Votes (threads dan comments)
+- Leaderboards
 
-### Advanced Configuration
+## Struktur State Management
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Aplikasi menggunakan Redux Toolkit dengan slice-based architecture:
 
-### Deployment
+- **authSlice** - Mengelola state autentikasi pengguna
+- **threadsSlice** - Mengelola state threads dan comments
+- **usersSlice** - Mengelola state daftar pengguna
+- **leaderboardSlice** - Mengelola state leaderboard
+- **uiSlice** - Mengelola state UI seperti loading
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Fitur Unggulan
 
-### `npm run build` fails to minify
+### 1. Optimistic Updates
+- Vote pada thread dan komentar menggunakan optimistic updates
+- UI langsung terupdate sebelum mendapat response dari server
+- Memberikan pengalaman pengguna yang lebih responsif
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### 2. Responsive Design
+- Desain yang mobile-friendly
+- Layout yang adaptif untuk berbagai ukuran layar
+
+### 3. User Experience
+- Loading indicators yang informatif
+- Error handling yang user-friendly
+- Navigation yang intuitif
+
+### 4. Code Quality
+- Mengikuti AirBnB JavaScript Style Guide
+- Komponen yang modular dan reusable
+- Separation of concerns yang baik
+
+## Kontribusi
+
+Proyek ini dibuat sebagai submission untuk kelas Dicoding. Jika ingin berkontribusi:
+
+1. Fork repository
+2. Buat feature branch
+3. Commit changes
+4. Push ke branch
+5. Buat Pull Request
+
+## Lisensi
+
+Proyek ini dibuat untuk tujuan pembelajaran.
