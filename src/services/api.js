@@ -34,8 +34,11 @@ class ApiService {
     }
 
     try {
+      console.log('API Request:', { url, config }); // Debug log
       const response = await fetch(url, config);
       const data = await response.json();
+      
+      console.log('API Response:', { status: response.status, data }); // Debug log
 
       if (!response.ok) {
         throw new Error(data.message || 'Something went wrong');
@@ -43,98 +46,119 @@ class ApiService {
 
       return data;
     } catch (error) {
+      console.error('API Error:', error); // Debug log
       throw new Error(error.message || 'Network error');
     }
   }
 
   // Auth endpoints
   async register({ name, email, password }) {
-    return this.request('/register', {
+    const response = await this.request('/register', {
       method: 'POST',
       body: JSON.stringify({ name, email, password }),
     });
+    return response;
   }
 
   async login({ email, password }) {
-    return this.request('/login', {
+    const response = await this.request('/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    return response;
   }
 
   // Users endpoints
   async getAllUsers() {
-    return this.request('/users');
+    const response = await this.request('/users');
+    return response;
   }
 
   async getOwnProfile() {
-    return this.request('/users/me');
+    const response = await this.request('/users/me');
+    return response;
   }
 
   // Threads endpoints
   async getAllThreads() {
-    return this.request('/threads');
+    const response = await this.request('/threads');
+    return response;
   }
 
   async getThreadDetail(threadId) {
-    return this.request(`/threads/${threadId}`);
+    const response = await this.request(`/threads/${threadId}`);
+    return response;
   }
 
   async createThread({ title, body, category }) {
-    return this.request('/threads', {
+    const requestBody = { title, body };
+    if (category && category.trim()) {
+      requestBody.category = category;
+    }
+    
+    const response = await this.request('/threads', {
       method: 'POST',
-      body: JSON.stringify({ title, body, category }),
+      body: JSON.stringify(requestBody),
     });
+    return response;
   }
 
   // Comments endpoints
   async createComment(threadId, content) {
-    return this.request(`/threads/${threadId}/comments`, {
+    const response = await this.request(`/threads/${threadId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ content }),
     });
+    return response;
   }
 
-  // Votes endpoints
+  // Votes endpoints - Threads
   async upVoteThread(threadId) {
-    return this.request(`/threads/${threadId}/up-vote`, {
+    const response = await this.request(`/threads/${threadId}/up-vote`, {
       method: 'POST',
     });
+    return response;
   }
 
   async downVoteThread(threadId) {
-    return this.request(`/threads/${threadId}/down-vote`, {
+    const response = await this.request(`/threads/${threadId}/down-vote`, {
       method: 'POST',
     });
   }
 
   async neutralVoteThread(threadId) {
-    return this.request(`/threads/${threadId}/neutral-vote`, {
+    const response = await this.request(`/threads/${threadId}/neutral-vote`, {
       method: 'POST',
     });
+    return response;
   }
 
+  // Votes endpoints - Comments
   async upVoteComment(threadId, commentId) {
-    return this.request(`/threads/${threadId}/comments/${commentId}/up-vote`, {
+    const response = await this.request(`/threads/${threadId}/comments/${commentId}/up-vote`, {
       method: 'POST',
     });
+    return response;
   }
 
   async downVoteComment(threadId, commentId) {
-    return this.request(`/threads/${threadId}/comments/${commentId}/down-vote`, {
+    const response = await this.request(`/threads/${threadId}/comments/${commentId}/down-vote`, {
       method: 'POST',
     });
+    return response;
   }
 
   async neutralVoteComment(threadId, commentId) {
-    return this.request(`/threads/${threadId}/comments/${commentId}/neutral-vote`, {
+    const response = await this.request(`/threads/${threadId}/comments/${commentId}/neutral-vote`, {
       method: 'POST',
     });
+    return response;
   }
 
   // Leaderboard endpoints
   async getLeaderboards() {
-    return this.request('/leaderboards');
+    const response = await this.request('/leaderboards');
+    return response;
   }
 }
 

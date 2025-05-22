@@ -42,9 +42,12 @@ export const createComment = createAsyncThunk(
   'threads/createComment',
   async ({ threadId, content }, { rejectWithValue }) => {
     try {
+      console.log('Creating comment with:', { threadId, content }); // Debug
       const response = await apiService.createComment(threadId, content);
+      console.log('Comment API response:', response); // Debug
       return { threadId, comment: response.data.comment };
     } catch (error) {
+      console.error('Create comment error:', error); // Debug
       return rejectWithValue(error.message);
     }
   },
@@ -57,6 +60,8 @@ export const voteThread = createAsyncThunk(
       const { auth } = getState();
       const userId = auth.user?.id;
 
+      console.log('Voting thread:', { threadId, voteType, userId }); // Debug
+
       if (voteType === 1) {
         await apiService.upVoteThread(threadId);
       } else if (voteType === -1) {
@@ -67,6 +72,7 @@ export const voteThread = createAsyncThunk(
 
       return { threadId, voteType, userId };
     } catch (error) {
+      console.error('Vote thread error:', error); // Debug
       return rejectWithValue(error.message);
     }
   },
@@ -79,6 +85,8 @@ export const voteComment = createAsyncThunk(
       const { auth } = getState();
       const userId = auth.user?.id;
 
+      console.log('Voting comment:', { threadId, commentId, voteType, userId }); // Debug
+
       if (voteType === 1) {
         await apiService.upVoteComment(threadId, commentId);
       } else if (voteType === -1) {
@@ -89,6 +97,7 @@ export const voteComment = createAsyncThunk(
 
       return { threadId, commentId, voteType, userId };
     } catch (error) {
+      console.error('Vote comment error:', error); // Debug
       return rejectWithValue(error.message);
     }
   },
@@ -134,6 +143,10 @@ const threadsSlice = createSlice({
       const thread = state.threads.find((t) => t.id === threadId);
       
       if (thread) {
+        // Ensure upVotesBy and downVotesBy are arrays
+        thread.upVotesBy = thread.upVotesBy || [];
+        thread.downVotesBy = thread.downVotesBy || [];
+        
         // Remove user from all vote arrays first
         thread.upVotesBy = thread.upVotesBy.filter((id) => id !== userId);
         thread.downVotesBy = thread.downVotesBy.filter((id) => id !== userId);
@@ -148,6 +161,9 @@ const threadsSlice = createSlice({
 
       // Update current thread if it's the same
       if (state.currentThread && state.currentThread.id === threadId) {
+        state.currentThread.upVotesBy = state.currentThread.upVotesBy || [];
+        state.currentThread.downVotesBy = state.currentThread.downVotesBy || [];
+        
         state.currentThread.upVotesBy = state.currentThread.upVotesBy.filter((id) => id !== userId);
         state.currentThread.downVotesBy = state.currentThread.downVotesBy.filter((id) => id !== userId);
         
@@ -161,9 +177,13 @@ const threadsSlice = createSlice({
     optimisticVoteComment: (state, action) => {
       const { commentId, voteType, userId } = action.payload;
       
-      if (state.currentThread) {
+      if (state.currentThread && state.currentThread.comments) {
         const comment = state.currentThread.comments.find((c) => c.id === commentId);
         if (comment) {
+          // Ensure upVotesBy and downVotesBy are arrays
+          comment.upVotesBy = comment.upVotesBy || [];
+          comment.downVotesBy = comment.downVotesBy || [];
+          
           // Remove user from all vote arrays first
           comment.upVotesBy = comment.upVotesBy.filter((id) => id !== userId);
           comment.downVotesBy = comment.downVotesBy.filter((id) => id !== userId);
@@ -234,14 +254,26 @@ const threadsSlice = createSlice({
         state.loading = false;
         const { threadId, comment } = action.payload;
         
+        console.log('Adding comment to state:', { threadId, comment }); // Debug
+        
         if (state.currentThread && state.currentThread.id === threadId) {
+          // Ensure comments array exists
+          if (!state.currentThread.comments) {
+            state.currentThread.comments = [];
+          }
           state.currentThread.comments.push(comment);
         }
         
         // Update comment count in threads list
         const thread = state.threads.find((t) => t.id === threadId);
         if (thread) {
-          thread.totalComments += 1;
+          thread.totalComments = (thread.totalComments || 0) + 1;
+        }
+        
+        // Update filtered threads as well
+        const filteredThread = state.filteredThreads.find((t) => t.id === threadId);
+        if (filteredThread) {
+          filteredThread.totalComments = (filteredThread.totalComments || 0) + 1;
         }
       })
       .addCase(createComment.rejected, (state, action) => {
@@ -251,6 +283,7 @@ const threadsSlice = createSlice({
       // Vote thread cases
       .addCase(voteThread.fulfilled, (state, action) => {
         // Optimistic update was already applied, no need to update again
+        console.log('Thread vote successful:', action.payload); // Debug
       })
       .addCase(voteThread.rejected, (state, action) => {
         state.error = action.payload;
@@ -259,6 +292,7 @@ const threadsSlice = createSlice({
       // Vote comment cases
       .addCase(voteComment.fulfilled, (state, action) => {
         // Optimistic update was already applied, no need to update again
+        console.log('Comment vote successful:', action.payload); // Debug
       })
       .addCase(voteComment.rejected, (state, action) => {
         state.error = action.payload;

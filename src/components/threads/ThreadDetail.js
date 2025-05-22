@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { formatDateTime } from '../../utils/formatDate';
 import VoteButton from '../votes/VoteButton';
 import VoteCount from '../votes/VoteCount';
@@ -11,6 +12,8 @@ function ThreadDetail({ thread }) {
   if (!thread) {
     return <div className="loading">Loading thread...</div>;
   }
+
+  console.log('ThreadDetail rendered:', { thread, isAuthenticated }); // Debug
 
   return (
     <article className="thread-detail">
@@ -61,15 +64,25 @@ function ThreadDetail({ thread }) {
       </div>
       
       <div className="comments-section">
-        <h2>Comments ({thread.comments.length})</h2>
+        <h2>Comments ({thread.comments?.length || 0})</h2>
         
-        {isAuthenticated && <CommentForm threadId={thread.id} />}
+        {/* Comment Form - Show for authenticated users */}
+        {isAuthenticated ? (
+          <CommentForm threadId={thread.id} />
+        ) : (
+          <div className="auth-prompt">
+            <p>
+              Please <Link to="/login">login</Link> to join the discussion and add comments.
+            </p>
+          </div>
+        )}
         
-        {thread.comments.length > 0 ? (
+        {/* Comments List */}
+        {thread.comments && thread.comments.length > 0 ? (
           <CommentsList comments={thread.comments} threadId={thread.id} />
         ) : (
           <div className="no-comments">
-            <p>No comments yet. Be the first to comment!</p>
+            <p>No comments yet. {isAuthenticated ? 'Be the first to comment!' : 'Login to be the first to comment!'}</p>
           </div>
         )}
       </div>

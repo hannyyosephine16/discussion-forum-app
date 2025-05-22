@@ -35,11 +35,11 @@ function VoteButton({
     // Apply optimistic update first
     if (type === 'thread') {
       dispatch(optimisticVoteThread({ threadId: itemId, voteType: newVoteType, userId }));
-      // Then dispatch the actual API call
+      // Then dispatch the actual API call - for threads, threadId is itemId
       dispatch(voteThread({ threadId: itemId, voteType: newVoteType }));
     } else if (type === 'comment') {
       dispatch(optimisticVoteComment({ commentId: itemId, voteType: newVoteType, userId }));
-      // Then dispatch the actual API call
+      // Then dispatch the actual API call - for comments, use both threadId and commentId
       dispatch(voteComment({ threadId, commentId: itemId, voteType: newVoteType }));
     }
   };
