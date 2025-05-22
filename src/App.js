@@ -1,4 +1,3 @@
-// File: src/App.js
 import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -6,10 +5,11 @@ import Navigation from './components/common/Navigation';
 import LoadingBar from './components/common/LoadingBar';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { fetchUsers } from './store/usersSlice';
+import { fetchThreads } from './store/threadsSlice';
 import { setLoading } from './store/uiSlice';
 import './styles/App.css';
 
-// Lazy load komponen untuk code splitting dan performance
+// Lazy load komponen
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
@@ -17,7 +17,6 @@ const ThreadDetailPage = lazy(() => import('./pages/ThreadDetailPage'));
 const CreateThreadPage = lazy(() => import('./pages/CreateThreadPage'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 
-// Custom loading fallback component
 const LazyLoadingFallback = ({ message = "Loading page..." }) => (
   <div className="lazy-loading-fallback">
     <div className="loading-spinner" aria-hidden="true"></div>
@@ -26,7 +25,6 @@ const LazyLoadingFallback = ({ message = "Loading page..." }) => (
   </div>
 );
 
-// Error boundary untuk lazy loading
 class LazyLoadErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -63,18 +61,35 @@ class LazyLoadErrorBoundary extends React.Component {
 function App() {
   const dispatch = useDispatch();
   const { isLoading } = useSelector((state) => state.ui);
+  const { users } = useSelector((state) => state.users);
+  const { threads } = useSelector((state) => state.threads);
 
   useEffect(() => {
-    // Fetch users on app initialization
-    dispatch(setLoading({ loading: true, message: 'Loading users...' }));
-    dispatch(fetchUsers()).finally(() => {
-      dispatch(setLoading({ loading: false }));
-    });
-  }, [dispatch]);
+    // OPTIMASI: Parallel loading untuk data yang tidak saling bergantung
+    const loadInitialData = async () => {
+      dispatch(setLoading({ loading: true, message: 'Loading application data...' }));
+      
+      try {
+        // Load users dan threads secara parallel
+        await Promise.all([
+          users.length === 0 ? dispatch(fetchUsers()) : Promise.resolve(),
+          threads.length === 0 ? dispatch(fetchThreads()) : Promise.resolve()
+        ]);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        dispatch(setLoading({ loading: false }));
+      }
+    };
+
+    // Hanya load jika belum ada data (caching)
+    if (users.length === 0 || threads.length === 0) {
+      loadInitialData();
+    }
+  }, [dispatch, users.length, threads.length]);
 
   return (
     <div className="App">
-      {/* Skip to content link for accessibility */}
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
@@ -86,26 +101,11 @@ function App() {
         <LazyLoadErrorBoundary>
           <Suspense fallback={<LazyLoadingFallback />}>
             <Routes>
-              <Route 
-                path="/" 
-                element={<HomePage />} 
-              />
-              <Route 
-                path="/login" 
-                element={<LoginPage />} 
-              />
-              <Route 
-                path="/register" 
-                element={<RegisterPage />} 
-              />
-              <Route 
-                path="/thread/:id" 
-                element={<ThreadDetailPage />} 
-              />
-              <Route 
-                path="/leaderboard" 
-                element={<LeaderboardPage />} 
-              />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/thread/:id" element={<ThreadDetailPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route 
                 path="/create-thread" 
                 element={
@@ -114,7 +114,6 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
-              {/* 404 Route */}
               <Route 
                 path="*" 
                 element={
