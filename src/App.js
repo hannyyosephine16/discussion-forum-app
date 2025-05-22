@@ -18,7 +18,7 @@ import './styles/App.css';
 function App() {
   const dispatch = useDispatch();
   const { isLoading } = useSelector((state) => state.ui);
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     // Fetch users on app initialization

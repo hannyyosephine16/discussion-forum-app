@@ -57,13 +57,12 @@ export const voteThread = createAsyncThunk(
       const { auth } = getState();
       const userId = auth.user?.id;
 
-      let response;
       if (voteType === 1) {
-        response = await apiService.upVoteThread(threadId);
+        await apiService.upVoteThread(threadId);
       } else if (voteType === -1) {
-        response = await apiService.downVoteThread(threadId);
+        await apiService.downVoteThread(threadId);
       } else {
-        response = await apiService.neutralVoteThread(threadId);
+        await apiService.neutralVoteThread(threadId);
       }
 
       return { threadId, voteType, userId };
@@ -80,13 +79,12 @@ export const voteComment = createAsyncThunk(
       const { auth } = getState();
       const userId = auth.user?.id;
 
-      let response;
       if (voteType === 1) {
-        response = await apiService.upVoteComment(threadId, commentId);
+        await apiService.upVoteComment(threadId, commentId);
       } else if (voteType === -1) {
-        response = await apiService.downVoteComment(threadId, commentId);
+        await apiService.downVoteComment(threadId, commentId);
       } else {
-        response = await apiService.neutralVoteComment(threadId, commentId);
+        await apiService.neutralVoteComment(threadId, commentId);
       }
 
       return { threadId, commentId, voteType, userId };
